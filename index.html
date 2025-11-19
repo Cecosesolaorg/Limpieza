@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotación de Limpieza del Baño</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fondo más suave */
+            padding: 1.5rem;
+        }
+        .container {
+            max-width: 700px; 
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; 
+            border-spacing: 0;
+            border: 1px solid #d1d5db; 
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 14px 18px;
+            text-align: left; 
+            border-bottom: 1px solid #e5e7eb; 
+        }
+        
+        td:first-child {
+             border-right: 1px solid #e5e7eb; 
+        }
+        
+        tr:last-child td {
+            border-bottom: none; 
+        }
+        th:last-child {
+            border-right: none;
+        }
+
+        th {
+            background-color: #e5e7eb; 
+            color: #1f2937; 
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            text-align: center; 
+            border-right: 1px solid #d1d5db; 
+        }
+        
+        td {
+            font-size: 0.95rem;
+        }
+        
+        tr:not(.vigilancia):not(.current-turn):nth-child(even) {
+            background-color: #f9fafb; 
+        }
+        tr:hover:not(.vigilancia) {
+            background-color: #f0f9ff; 
+        }
+        
+        thead tr:first-child th:first-child { border-top-left-radius: 9px; }
+        thead tr:first-child th:last-child { border-top-right-radius: 9px; }
+        thead tr:first-child th:last-child { border-right: none; }
+
+        .vigilancia {
+            background-color: #f9f9f9; 
+            color: #64748b; 
+            font-weight: 500;
+        }
+
+        .current-turn {
+            background-color: #f7fee7 !important; 
+            position: relative;
+            z-index: 10;
+        }
+        
+        .error-message {
+            background-color: #fee2e2;
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #fca5a5;
+            display: none;
+        }
+        .day-cell {
+            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+        }
+        .day-name {
+            font-weight: bold;
+            color: #334155; 
+        }
+        .date-text {
+            font-size: 0.75rem; 
+            color: #64748b;
+        }
+        
+        #schedule-table td:nth-child(2) {
+             text-align: center; 
+        }
+
+        .assignment-content {
+            font-weight: 600;
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0 auto; 
+        }
+        
+        .person-name {
+            position: relative;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background-color 0.15s;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        
+        .person-name:hover {
+            background-color: #fee2e2; /* Fondo de alerta roja al hacer hover */
+        }
+        
+        .remove-icon {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            font-weight: bold;
+            line-height: 16px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 20;
+        }
+        
+        .person-name:hover .remove-icon {
+            display: block;
+        }
+
+        .vacant-slot {
+            font-weight: 700;
+            color: #991b1b; /* Rojo oscuro */
+            background-color: #fef2f2;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px dashed #fca5a5;
+        }
+
+        #main-title-svg {
+            color: #4f46e5; 
+        }
+
+        /* ESTILOS DE IMPRESIÓN MEJORADOS */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body { background-color: white; padding: 0 !important; margin: 0 !important; display: block !important; }
+
+            .container {
+                box-shadow: none;
+                width: 100%; 
+                max-width: 100%;
+                padding: 0.5cm 1cm !important; 
+                margin: 0 auto !important; 
+                border-radius: 0;
+            }
+
+            table {
+                border-collapse: collapse !important; 
+                border: 2px solid #333 !important; 
+                border-radius: 0 !important; 
+                width: 100% !important; 
+            }
+
+            th, td {
+                border: 1px solid #999 !important; 
+                padding: 12px 15px !important; 
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .person-name { 
+                 /* Evitar que se muestre el ícono de remover en la impresión */
+                 background-color: transparent !important;
+                 cursor: default;
+            }
+            .remove-icon { display: none !important; }
+
+            th { background-color: #e5e7eb !important; color: black !important; font-weight: 700 !important; }
+            tr:last-child td { border-bottom: 1px solid #999 !important; }
+            td:first-child { border-right: 1px solid #999 !important; }
+            tr:nth-child(even) { background-color: #f7f7f7 !important; }
+            .current-turn { border: 2px solid #bef264 !important; background-color: #f7fee7 !important; }
+            .vigilancia { background-color: #f0f0f0 !important; }
+            #table-print-title { display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937; }
+            #table-screen-title { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="flex items-center justify-between mb-4 no-print">
+        <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+            <svg id="main-title-svg" class="w-8 h-8 mr-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2m-6 0h.01"></path>
+            </svg>
+            LIMPIEZA DEL BAÑO 
+        </h1>
+        <div class="flex space-x-2">
+            <button id="reorder-button" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105 disabled:bg-gray-300" disabled>
+                Generar Rotación
+            </button>
+            <button id="print-button" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105" disabled>
+                Imprimir Lista
+            </button>
+        </div>
+    </div>
+    
+    <p class="text-gray-600 mb-6 no-print">Carga tu archivo CSV.</p>
+    
+    <div id="file-upload-section" class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 no-print">
+        <label for="csvFile" class="block text-sm font-medium text-gray-700 mb-2">Selecciona lista de compañeros(.csv)</label>
+        <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"/>
+    </div>
+
+    <div id="error-alert" class="error-message no-print"></div>
+    <div id="loading-message" class="text-center text-gray-600 font-semibold mb-4 hidden no-print">lista...</div>
+    
+    <!-- Título de la tabla para pantalla -->
+    <h2 id="table-screen-title" class="text-xl font-semibold text-gray-700 mb-3 hidden">LIStado</h2>
+    <!-- Título de la tabla para impresión (con emojis) -->
+    <h2 id="table-print-title" class="hidden">🧽🫧LIMPIEZA DEL BAÑO QUE NO PUEDA POR FAVOR BUSCAR QUITE🫧🧽</h2>
+
+    <table id="schedule-table">
+        <thead>
+            <tr>
+                <th class="rounded-tl-lg">Fecha</th> 
+                <th class="rounded-tr-lg">Compañéros</th> 
+            </tr>
+        </thead>
+        <tbody id="schedule-body">
+            <!-- Mensaje inicial visible al cargar la página -->
+            <tr id="initial-message-row">
+                <td colspan="2" class="text-center text-gray-500 py-8">Por favor, carga un archivo CSV para generar la lista.</td> 
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="notes-section" class="mt-8 p-4 bg-gray-50 border-l-4 border-gray-300 text-gray-700 rounded-md hidden no-print">
+        <p class="font-semibold mb-2">Detalles de la Rotación y CSV:</p>
+        <p class="text-sm">
+            ✅ **Regla de Rotación:** Los turnos de **Miércoles, Jueves y Viernes** rotan entre la lista de compañeros formando parejas **sin repetir el último apellido** (si es posible). La lista se **baraja aleatoriamente** antes de crear cada nueva rotación (usa el botón "Generar Nueva Rotación").
+            <br>
+            🛡️ **Vigilancia:** Los días **Sáb, Dom, Lun y Mar** son cubiertos por la **Vigilancia** (Turno fijo).
+            <br>
+            ❌ **Eliminar:** Haz clic en el nombre de un compañero en la lista para **eliminarlo** de ese turno y **buscar un reemplazo** automático.
+            <br>
+            📁 **Formato CSV:** Asegúrate de que los nombres y apellidos estén en la **primera o segunda columna** de tu archivo CSV.
+            <br>
+            <span id="rotation-length" class="font-medium mt-2 block"></span>
+        </p>
+    </div>
+</div>
+
+<script>
+    // Variables globales para la data y el estado
+    let rawCsvData = null; // Contenido del CSV cargado.
+    let allPeopleData = []; // Lista completa de personas (para encontrar reemplazos).
+    let scheduleState = []; // Estado actual del cronograma (para re-renderizar).
+    let excludedPeople = []; // Personas que quedaron fuera de la rotación inicial (prioridad para reemplazo).
+    
+    // Configuración
+    const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const VIGILANCIA_PLACEHOLDER = "Vigilancia";
+
+    // --- Definiciones de Íconos SVG ---
+    const CLEANING_ICON_SVG = '<svg class="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21H6.737a2 2 0 01-1.789-2.894l3.5-7A2 2 0 019.236 10H14zm0 0V4a2 2 0 10-4 0v6m-4 0h8"></path></svg>';
+    const VIGILANCIA_ICON_SVG = '<svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 4.016 12.001 12.001 0 00-2.396 6.848c.84 5.305 4.39 9.53 10.378 11.2 5.987-1.67 9.537-5.895 10.378-11.2a12.001 12.001 0 00-2.396-6.848z"></path></svg>';
+
+    // Elementos del DOM
+    const fileInput = document.getElementById('csvFile');
+    const scheduleBody = document.getElementById('schedule-body');
+    const errorAlert = document.getElementById('error-alert');
+    const notesSection = document.getElementById('notes-section');
+    const loadingMessage = document.getElementById('loading-message');
+    const rotationLengthSpan = document.getElementById('rotation-length');
+    const reorderButton = document.getElementById('reorder-button');
+    const printButton = document.getElementById('print-button');
+    const tableScreenTitle = document.getElementById('table-screen-title');
+    const tablePrintTitle = document.getElementById('table-print-title');
+
+    reorderButton.disabled = true;
+    printButton.disabled = true;
+
+
+    function displayError(message) {
+        errorAlert.textContent = 'Error: ' + message;
+        errorAlert.style.display = 'block';
+        loadingMessage.classList.add('hidden');
+        scheduleBody.innerHTML = '<tr><td colspan="2" class="text-center text-red-500 py-8">Error al procesar los datos. Consulta la consola.</td></tr>'; 
+        notesSection.classList.add('hidden');
+        reorderButton.disabled = true;
+        printButton.disabled = true;
+        tableScreenTitle.classList.add('hidden');
+        rawCsvData = null; 
+        console.error(message);
+    }
+    
+    function clearError() {
+        errorAlert.style.display = 'none';
+        errorAlert.textContent = '';
+    }
+
+    /**
+     * Extrae el apellido (última palabra) y el nombre completo de una cadena.
+     */
+    function extractNameData(fullName) {
+        if (!fullName || fullName.trim() === '') {
+            return null;
+        }
+        const trimmedName = fullName.trim();
+        const parts = trimmedName.split(/\s+/).filter(p => p.length > 0);
+        const lastName = parts.length > 0 ? parts[parts.length - 1].toUpperCase() : '';
+        
+        return {
+            fullName: trimmedName,
+            lastName: lastName,
+            // ID único para identificar a la persona en el pool
+            id: trimmedName.toLowerCase().replace(/\s/g, '_') + '_' + lastName.slice(0, 3) 
+        };
+    }
+
+    /**
+     * Parsea los datos CSV para obtener una lista única de personas.
+     */
+    function parseNames(csvString) {
+        const lines = csvString.trim().split('\n');
+        const peopleMap = new Map();
+        
+        let separator = ',';
+        const firstLine = lines[0] || '';
+        if (firstLine.split(';').length > firstLine.split(',').length) {
+            separator = ';';
+        }
+        
+        const headerLine = lines[0].toLowerCase();
+        const isHeader = headerLine.includes('nombre') || headerLine.includes('apellido') || headerLine.includes('name');
+        const dataLines = isHeader ? lines.slice(1) : lines;
+
+        for (const line of dataLines) {
+            if (line.trim() === '') continue;
+            
+            const parts = line.split(separator);
+            const names = parts.slice(0, 2).filter(n => n.trim() !== '');
+            
+            for (const name of names) {
+                const data = extractNameData(name);
+                if (data && data.fullName) {
+                    peopleMap.set(data.fullName, data);
+                }
+            }
+        }
+        return Array.from(peopleMap.values());
+    }
+
+    /**
+     * Baraja un array usando el algoritmo de Fisher-Yates.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    /**
+     * Crea un array de 1 pareja respetando la restricción de "no repetir apellido".
+     * Devuelve los objetos de persona usados y sus índices.
+     * @param {Array<{fullName: string, lastName: string, id: string}>} availablePeople Lista de personas.
+     * @returns {{person1: object, person2: object, indices: number[]}} Objeto con las dos personas y sus índices.
+     */
+    function createOnePair(availablePeople) {
+        if (availablePeople.length < 2) return null;
+
+        const p1 = availablePeople[0];
+        let p2 = null;
+        let p2Index = -1;
+
+        // 2. Búsqueda estricta: buscar P2 sin repetir apellido
+        for (let i = 1; i < availablePeople.length; i++) {
+            const person = availablePeople[i];
+            
+            if (person.lastName !== p1.lastName) {
+                p2 = person;
+                p2Index = i;
+                break; 
+            }
+        }
+        
+        // 3. Relleno de emergencia (si todos los restantes son familiares, tomamos el siguiente)
+        if (!p2) {
+             p2 = availablePeople[1];
+             p2Index = 1;
+        }
+
+        return {
+            person1: p1,
+            person2: p2,
+            indices: [0, p2Index]
+        };
+    }
+
+    /**
+     * Obtiene la fecha de inicio (próximo miércoles)
+     */
+    function getStartDate() {
+        const today = new Date();
+        const currentDay = today.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+        const targetDay = 3; // Miércoles
+
+        let daysUntil = targetDay - currentDay;
+        if (daysUntil <= 0) { 
+             daysUntil += 7;
+        }
+
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() + daysUntil);
+        startDate.setHours(12, 0, 0, 0); 
+        return startDate;
+    }
+
+    /**
+     * Formatea la fecha como "Día de la semana, DD/MM/AAAA"
+     */
+    function formatDate(date) {
+        const dayOfWeek = DAY_NAMES[date.getDay()];
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear(); 
+        return `<span class="day-name">${dayOfWeek}</span> <span class="date-text">${day}/${month}/${year}</span>`;
+    }
+
+    /**
+     * Función para encontrar un reemplazo en el pool (prioriza excludedPeople)
+     * @param {string} remainingLastName Apellido de la persona que queda en el turno (para evitar duplicados).
+     * @returns {{person: object, isNew: boolean}|null} La persona de reemplazo o null.
+     */
+    function findReplacement(remainingLastName) {
+        // 1. Crear una lista de candidatos disponibles (excluidos + personas que no están en el scheduleState)
+        const currentAssignedIds = scheduleState.reduce((acc, turn) => {
+            if (turn.person1) acc.add(turn.person1.id);
+            if (turn.person2) acc.add(turn.person2.id);
+            return acc;
+        }, new Set());
+
+        // El pool para reemplazo son TODAS las personas que NO están actualmente asignadas en scheduleState.
+        const replacementCandidates = allPeopleData.filter(p => !currentAssignedIds.has(p.id));
+
+        // Barajar el pool de reemplazo para no tener siempre el mismo reemplazo.
+        shuffleArray(replacementCandidates);
+
+        // 2. Buscar el mejor reemplazo (sin apellido repetido)
+        for (const candidate of replacementCandidates) {
+            if (candidate.lastName !== remainingLastName) {
+                // Candidato ideal: apellido diferente
+                return { person: candidate, isNew: excludedPeople.some(p => p.id === candidate.id) };
+            }
+        }
+
+        // 3. Relleno de emergencia: Si solo quedan personas con el mismo apellido, usamos la primera disponible
+        if (replacementCandidates.length > 0) {
+            const emergencyCandidate = replacementCandidates[0];
+            return { person: emergencyCandidate, isNew: excludedPeople.some(p => p.id === emergencyCandidate.id) };
+        }
+
+        return null; // No hay nadie disponible
+    }
+    
+    /**
+     * Maneja la eliminación de una persona del turno y busca reemplazo.
+     * @param {number} turnIndex Índice del turno en scheduleState.
+     * @param {('person1'|'person2')} personSlot Slot a reemplazar.
+     */
+    function handleRemoval(turnIndex, personSlot) {
+        const turn = scheduleState[turnIndex];
+        if (!turn || turn.type !== 'pair') return;
+
+        const otherSlot = personSlot === 'person1' ? 'person2' : 'person1';
+        const remainingPerson = turn[otherSlot];
+        
+        if (!remainingPerson) {
+             // Esto no debería pasar, pero si la otra persona ya fue eliminada, marcamos como vacante total.
+             turn[personSlot] = 'VACANTE'; 
+             renderSchedule();
+             return;
+        }
+
+        const replacementResult = findReplacement(remainingPerson.lastName);
+
+        if (replacementResult) {
+            // Reemplazo exitoso
+            turn[personSlot] = replacementResult.person;
+        } else {
+            // No se encontró reemplazo, marcar como vacante
+            turn[personSlot] = 'VACANTE';
+        }
+
+        // Re-renderizar la tabla para reflejar el cambio
+        renderSchedule();
+        
+        // Opcional: Actualizar el mensaje de excluidos, ya que el pool de excluidos ha cambiado.
+        // updateRotationLengthMessage(); // Lo omitimos por simplicidad en esta versión, ya que es dinámico.
+    }
+
+    /**
+     * Renderiza la tabla completa a partir del scheduleState.
+     */
+    function renderSchedule() {
+        scheduleBody.innerHTML = ''; // Limpiar la tabla
+
+        if (scheduleState.length === 0) {
+            scheduleBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500 py-8">No hay turnos asignados. Carga o genera la lista.</td></tr>'; 
+            tableScreenTitle.classList.add('hidden');
+            notesSection.classList.add('hidden');
+            reorderButton.disabled = true;
+            printButton.disabled = true;
+            tablePrintTitle.classList.add('hidden');
+            return;
+        }
+
+        tableScreenTitle.classList.remove('hidden');
+        notesSection.classList.remove('hidden');
+        reorderButton.disabled = false;
+        printButton.disabled = false;
+        tablePrintTitle.classList.remove('hidden');
+
+        let firstCleaningRowFound = false; 
+
+        scheduleState.forEach((assignment, turnIndex) => {
+            const row = document.createElement('tr');
+            
+            // Columna de la Fecha
+            const dateCell = document.createElement('td');
+            dateCell.classList.add('day-cell'); 
+            dateCell.innerHTML = formatDate(assignment.date);
+
+            // Columna del Turno
+            const turnoCell = document.createElement('td');
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('assignment-content');
+            
+            let contentHTML = '';
+
+            if (assignment.type === 'vigilancia') {
+                contentHTML = VIGILANCIA_ICON_SVG + VIGILANCIA_PLACEHOLDER;
+                row.classList.add('vigilancia');
+            } else { // type === 'pair'
+                
+                // Lógica de resaltado (solo la primera vez)
+                if (!firstCleaningRowFound && assignment.date.getDay() === 3) { // 3 = Miércoles
+                    row.classList.add('current-turn');
+                    firstCleaningRowFound = true; 
+                }
+
+                // Etiqueta de número de turno
+                const turnLabel = `<span class="text-sm font-normal text-gray-500 mr-2">#${assignment.turnNumber}:</span>`;
+                contentHTML = CLEANING_ICON_SVG + turnLabel;
+                
+                // Función auxiliar para renderizar el nombre con interactividad
+                const renderPerson = (person, slot) => {
+                    if (person === 'VACANTE' || !person) {
+                        return `<span class="vacant-slot">VACANTE (BUSCAR QUITE)</span>`;
+                    }
+                    
+                    // Si es un objeto de persona, hacemos el nombre interactivo
+                    return `
+                        <span class="person-name" data-turn-index="${turnIndex}" data-person-slot="${slot}" title="Haz clic para eliminar y buscar reemplazo">
+                            ${person.fullName}
+                            <span class="remove-icon" onclick="handleRemoval(${turnIndex}, '${slot}')">x</span>
+                        </span>
+                    `;
+                };
+
+                const p1HTML = renderPerson(assignment.person1, 'person1');
+                const p2HTML = renderPerson(assignment.person2, 'person2');
+
+                contentHTML += p1HTML + '<span class="mx-1"> y </span>' + p2HTML;
+            }
+
+            wrapper.innerHTML = contentHTML;
+            turnoCell.appendChild(wrapper);
+            
+            row.appendChild(dateCell);
+            row.appendChild(turnoCell);
+            scheduleBody.appendChild(row);
+        });
+    }
+
+
+    /**
+     * Genera y muestra el cronograma. (Llamada inicial o por botón Reordenar)
+     */
+    function generateSchedule() {
+        if (!rawCsvData) return;
+        
+        loadingMessage.classList.remove('hidden');
+        clearError();
+
+        allPeopleData = parseNames(rawCsvData);
+        const uniquePeopleCount = allPeopleData.length;
+        
+        if (uniquePeopleCount < 2) {
+             displayError(`El archivo CSV debe contener al menos 2 nombres únicos. Solo se encontraron ${uniquePeopleCount}.`);
+             return;
+        }
+
+        // 1. Barajar la lista completa para la rotación inicial
+        let currentPool = [...allPeopleData];
+        shuffleArray(currentPool); 
+        
+        // 2. GENERACIÓN DE TODOS LOS TURNOS DE PAREJAS (Data structure actualizada)
+        let allAssignments = []; 
+
+        while (currentPool.length >= 2) {
+            const pairResult = createOnePair(currentPool);
+            
+            if (pairResult) {
+                allAssignments.push({ person1: pairResult.person1, person2: pairResult.person2, type: 'pair' });
+
+                // Remover las personas usadas del pool
+                const indicesToRemove = pairResult.indices.sort((a, b) => b - a); 
+                currentPool.splice(indicesToRemove[0], 1); 
+                currentPool.splice(indicesToRemove[1], 1); 
+            } else {
+                break; 
+            }
+        }
+        
+        // 3. Guardar las personas excluidas para reemplazos
+        excludedPeople = currentPool; 
+
+        // 4. GENERAR EL CRONOGRAMA DÍA A DÍA
+        const actualTurnsNeeded = allAssignments.length;
+        const requiredWeeks = Math.ceil(actualTurnsNeeded / 3); 
+        const startDate = getStartDate();
+        
+        scheduleState = []; // Limpiar el estado
+        let currentAssignmentIndex = 0;
+        let cleaningTurnCounter = 1; 
+        let dayOffset = 0;
+        const MAX_DAYS = requiredWeeks * 7 + 7; 
+
+        while (dayOffset < MAX_DAYS) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + dayOffset);
+            
+            const dayIndex = currentDate.getDay(); // 0-6
+            const isVigilanciaDay = [0, 1, 2, 6].includes(dayIndex); // Dom, Lun, Mar, Sáb
+            
+            if (!isVigilanciaDay && currentAssignmentIndex >= actualTurnsNeeded) {
+                break;
+            }
+
+            if (isVigilanciaDay) {
+                scheduleState.push({
+                    type: 'vigilancia',
+                    date: currentDate
+                });
+            } else {
+                if (currentAssignmentIndex < actualTurnsNeeded) {
+                    const assignmentData = allAssignments[currentAssignmentIndex];
+                    
+                    scheduleState.push({
+                        type: 'pair',
+                        turnNumber: cleaningTurnCounter,
+                        date: currentDate,
+                        person1: assignmentData.person1,
+                        person2: assignmentData.person2
+                    });
+
+                    cleaningTurnCounter++; 
+                    currentAssignmentIndex++;
+                }
+            }
+            
+            dayOffset++; 
+        }
+        
+        // 5. PINTAR EL ESTADO INICIAL
+        renderSchedule();
+        updateRotationLengthMessage();
+        loadingMessage.classList.add('hidden');
+    }
+
+    /**
+     * Actualiza el mensaje informativo sobre la duración y excluidos.
+     */
+    function updateRotationLengthMessage() {
+        const assignedTurns = scheduleState.filter(a => a.type === 'pair').length;
+        const assignedPeopleCount = assignedTurns * 2;
+        const requiredWeeks = Math.ceil(assignedTurns / 3);
+        const excludedCount = excludedPeople.length;
+
+        rotationLengthSpan.innerHTML = `La rotación completa requiere **${assignedTurns} turnos** para **${assignedPeopleCount} compañeros** (cubriendo un mínimo de ${requiredWeeks} semanas).`;
+
+        if (excludedCount > 0) {
+            rotationLengthSpan.innerHTML += `<br>⚠️ **Nota:** Se excluyó a ${excludedCount} compañero(s) para asegurar que todos los turnos iniciales sean de parejas. El compañero(s) restante(s) es: ${excludedPeople.map(p => p.fullName).join(', ')}.`;
+        }
+    }
+
+
+    // --- Manejadores de Eventos ---
+    
+    // Hacemos global la función de remoción para que el onclick en el HTML la encuentre
+    window.handleRemoval = handleRemoval; 
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file || !file.name.toLowerCase().endsWith('.csv')) {
+            if (file) displayError('Por favor, sube un archivo con extensión .csv.');
+            return;
+        }
+
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            rawCsvData = e.target.result; 
+            generateSchedule();
+        };
+        
+        reader.onerror = () => {
+            displayError('No se pudo leer el archivo.');
+        };
+
+        reader.readAsText(file, 'UTF-8');
+    });
+
+    reorderButton.addEventListener('click', generateSchedule);
+    
+    printButton.addEventListener('click', () => {
+        window.print();
+    });
+
+</script>
+</body>
+</html>
