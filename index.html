@@ -240,7 +240,14 @@
         </div>
     </div>
     
-    <p class="text-gray-600 mb-6 no-print">Carga tu archivo CSV.</p>
+    <p class="text-gray-600 mb-4 no-print">Configura y carga tu lista.</p>
+
+    <!-- SECCIÓN NUEVA PARA LA FECHA -->
+    <div class="mb-4 no-print">
+        <label for="startDate" class="block text-sm font-bold text-gray-700 mb-1">📅 COLOCAR FECHA DE INICIO:</label>
+        <input type="date" id="startDate" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2.5 bg-white focus:ring-sky-500 focus:border-sky-500 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors" />
+        <p class="text-xs text-gray-500 mt-1">La rotación comenzará a partir de esta fecha.</p>
+    </div>
     
     <div id="file-upload-section" class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 no-print">
         <label for="csvFile" class="block text-sm font-medium text-gray-700 mb-2">Selecciona lista de compañeros(.csv)</label>
@@ -248,18 +255,18 @@
     </div>
 
     <div id="error-alert" class="error-message no-print"></div>
-    <div id="loading-message" class="text-center text-gray-600 font-semibold mb-4 hidden no-print">lista...</div>
+    <div id="loading-message" class="text-center text-gray-600 font-semibold mb-4 hidden no-print">Generando lista...</div>
     
     <!-- Título de la tabla para pantalla -->
-    <h2 id="table-screen-title" class="text-xl font-semibold text-gray-700 mb-3 hidden">LIStado</h2>
+    <h2 id="table-screen-title" class="text-xl font-semibold text-gray-700 mb-3 hidden">Listado</h2>
     <!-- Título de la tabla para impresión (con emojis) -->
-    <h2 id="table-print-title" class="hidden">🧽🫧LIMPIEZA DEL BAÑO QUE NO PUEDA POR FAVOR BUSCAR QUITE🫧🧽</h2>
+    <h2 id="table-print-title" class="hidden">🧽🫧LIMPIEZA DEL BAÑO - PROGRAMACIÓN🫧🧽</h2>
 
     <table id="schedule-table">
         <thead>
             <tr>
                 <th class="rounded-tl-lg">Fecha</th> 
-                <th class="rounded-tr-lg">Compañéros</th> 
+                <th class="rounded-tr-lg">Compañeros</th> 
             </tr>
         </thead>
         <tbody id="schedule-body">
@@ -312,9 +319,20 @@
     const printButton = document.getElementById('print-button');
     const tableScreenTitle = document.getElementById('table-screen-title');
     const tablePrintTitle = document.getElementById('table-print-title');
+    const startDateInput = document.getElementById('startDate');
 
     reorderButton.disabled = true;
     printButton.disabled = true;
+
+    // Inicializar la fecha con el próximo miércoles automáticamente
+    window.addEventListener('DOMContentLoaded', () => {
+        const defaultDate = calculateNextWednesday();
+        // Ajustamos el formato a YYYY-MM-DD para el input
+        const year = defaultDate.getFullYear();
+        const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+        const day = String(defaultDate.getDate()).padStart(2, '0');
+        startDateInput.value = `${year}-${month}-${day}`;
+    });
 
 
     function displayError(message) {
@@ -435,9 +453,9 @@
     }
 
     /**
-     * Obtiene la fecha de inicio (próximo miércoles)
+     * Calcula el próximo miércoles por defecto.
      */
-    function getStartDate() {
+    function calculateNextWednesday() {
         const today = new Date();
         const currentDay = today.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
         const targetDay = 3; // Miércoles
@@ -447,10 +465,23 @@
              daysUntil += 7;
         }
 
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() + daysUntil);
-        startDate.setHours(12, 0, 0, 0); 
-        return startDate;
+        const date = new Date(today);
+        date.setDate(today.getDate() + daysUntil);
+        date.setHours(12, 0, 0, 0); 
+        return date;
+    }
+
+    /**
+     * Obtiene la fecha seleccionada por el usuario o la calcula si no hay input
+     */
+    function getStartDate() {
+        const inputVal = startDateInput.value;
+        if (inputVal) {
+            // Crear fecha desde el input (YYYY-MM-DD). 
+            // Nota: Agregamos 'T12:00:00' para evitar problemas de zona horaria que retrasen el día.
+            return new Date(inputVal + 'T12:00:00');
+        }
+        return calculateNextWednesday();
     }
 
     /**
@@ -531,9 +562,6 @@
 
         // Re-renderizar la tabla para reflejar el cambio
         renderSchedule();
-        
-        // Opcional: Actualizar el mensaje de excluidos, ya que el pool de excluidos ha cambiado.
-        // updateRotationLengthMessage(); // Lo omitimos por simplicidad en esta versión, ya que es dinámico.
     }
 
     /**
@@ -666,6 +694,8 @@
         // 4. GENERAR EL CRONOGRAMA DÍA A DÍA
         const actualTurnsNeeded = allAssignments.length;
         const requiredWeeks = Math.ceil(actualTurnsNeeded / 3); 
+        
+        // USAR LA FECHA DEL INPUT
         const startDate = getStartDate();
         
         scheduleState = []; // Limpiar el estado
@@ -761,6 +791,13 @@
 
     reorderButton.addEventListener('click', generateSchedule);
     
+    // Si el usuario cambia la fecha, regenerar si ya hay datos cargados
+    startDateInput.addEventListener('change', () => {
+        if (rawCsvData) {
+            generateSchedule();
+        }
+    });
+
     printButton.addEventListener('click', () => {
         window.print();
     });
